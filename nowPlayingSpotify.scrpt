@@ -38,6 +38,150 @@ repeat until isPlaying = false or spotifyIsOpen = false
 				set currentTrack to artistName & " - " & (get name of current track) as Unicode text
 				set currentTrack to replaceText(" ", "　", currentTrack)
 				
+property currentAlbumArtUrl : ""
+property trackName : ""
+set startIndex to 1
+set isPlaying to false
+set spotifyIsOpen to false
+
+on monoSpace(inputString)
+	set inputString to replaceText(" ", "　", inputString)
+	return inputString
+end monoSpace
+
+on replaceText(find, replace, someText)
+	set prevTIDs to text item delimiters of AppleScript
+	set text item delimiters of AppleScript to find
+	set someText to text items of someText
+	set text item delimiters of AppleScript to replace
+	set someText to "" & someText
+	set text item delimiters of AppleScript to prevTIDs
+	return someText
+end replaceText
+
+if application "Spotify" is running then
+	set spotifyIsOpen to true
+	tell application "Spotify"
+		if player state is not paused then
+			set isPlaying to true
+			set startIndex to 1
+		end if
+	end tell
+end if
+
+set currentTrack to " "
+
+repeat until isPlaying = false or spotifyIsOpen = false
+	delay 0.1
+	if application "Spotify" is running then
+		tell application "Spotify"
+			if player state is not paused then
+				set artistName to (get artist of current track)
+				set currentTrack to artistName & " - " & (get name of current track) as Unicode text
+				-- set currentTrack to replaceText(" ", "　", currentTrack)
+				
+			else
+				set currentTrack to " "
+				set isPlaying to false
+			end if
+		end tell
+		if currentTrack is not " " then
+			
+			if currentTrack is not trackName then
+				tell application "Spotify"
+					set albumArtUrl to (artwork url of current track)
+					if albumArtUrl is not currentAlbumArtUrl then
+						set currentAlbumArtUrl to albumArtUrl
+						do shell script "curl -L " & albumArtUrl & " -o " & "~/Downloads/nowPlayingIcon.png"
+						tell application "BetterTouchTool"
+							update_touch_bar_widget "C42302F9-D406-4650-BD4B-2BA3AF2A111D" icon_path "~/Downloads/nowPlayingIcon.png" background_color "0,0,0,225"
+							
+						end tell
+						
+						
+					end if
+				end tell
+				
+				
+				set startIndex to 1
+				set trackName to currentTrack as Unicode text
+				-- set trackName to monoSpace(trackName)
+				--				 set trackName to replaceText(" - ", "--", inputString)
+			end if
+			set strLength to the length of trackName
+			
+			set spaces to "																				" as Unicode text
+			if strLength is greater than 19 then
+				if (startIndex) = (strLength + 1) then
+					set displayText to (Unicode text startIndex thru (startIndex + 19) of (trackName & spaces))
+					tell application "BetterTouchTool"
+						update_touch_bar_widget "C42302F9-D406-4650-BD4B-2BA3AF2A111D" text displayText background_color "0,0,0,225"
+						
+					end tell
+					delay 1
+					set startIndex to 0
+				else
+					
+					if startIndex = 0 then
+						set startIndex to (startIndex + 1)
+					end if
+					
+					set displayText to (Unicode text startIndex thru (startIndex + 19) of (trackName & spaces))
+					
+					if startIndex = 1 then
+						tell application "BetterTouchTool"
+							update_touch_bar_widget "C42302F9-D406-4650-BD4B-2BA3AF2A111D" text displayText background_color "0,0,0,225"
+							
+							delay 2
+						end tell
+						
+					else
+						tell application "BetterTouchTool"
+							update_touch_bar_widget "C42302F9-D406-4650-BD4B-2BA3AF2A111D" text displayText background_color "0,0,0,225"
+						end tell
+					end if
+					
+				end if
+			else
+				tell application "BetterTouchTool"
+					update_touch_bar_widget "C42302F9-D406-4650-BD4B-2BA3AF2A111D" text trackName background_color "0,0,0,225"
+				end tell
+				
+			end if
+			
+			
+		else
+			set isPlaying to false
+			-- return
+			set pausedLabel to " - PAUSED - " as Unicode text
+			tell application "BetterTouchTool"
+				update_touch_bar_widget "C42302F9-D406-4650-BD4B-2BA3AF2A111D" text ""
+			end tell
+			set startIndex to 1
+			-- delay 5
+			--	return
+		end if
+		
+		
+	else
+		set spotifyIsOpen to false
+		set isPlaying to false
+		set pausedLabel to " - PAUSED - " as Unicode text
+		tell application "BetterTouchTool"
+			update_touch_bar_widget "C42302F9-D406-4650-BD4B-2BA3AF2A111D" text ""
+		end tell
+		set startIndex to 1
+		
+		-- delay 5
+		-- 		return
+	end if
+	set startIndex to (startIndex + 1)
+	
+end repeat
+
+return
+
+
 			else
 				set currentTrack to " "
 				set isPlaying to false
